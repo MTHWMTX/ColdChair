@@ -82,7 +82,7 @@ class E2EPipeline:
 
         for event in self.telemetry:
             phase_counts[event.phase] = phase_counts.get(event.phase, 0) + 1
-            if "error" in event.event_type.lower():
+            if "error" in event.event_type.lower() or "failed" in event.event_type.lower():
                 errors.append(f"{event.event_type}: {event.details}")
 
         return PipelineTelemetry(

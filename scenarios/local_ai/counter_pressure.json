@@ -1,0 +1,27 @@
+[
+  {
+    "resources": {
+      "gold": 220,
+      "lumber": 150
+    },
+    "supply": {
+      "used": 15,
+      "maximum": 20
+    },
+    "units": [
+      {
+        "id": 1,
+        "type": "footman",
+        "health": 60,
+        "position": {"x": 100, "y": 100}
+      },
+      {
+        "id": 2,
+        "type": "footman",
+        "health": 55,
+        "position": {"x": 110, "y": 105}
+      }
+    ],
+    "tick": 30
+  }
+]
