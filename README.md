@@ -57,6 +57,15 @@ Run evaluation latency benchmark:
 python -m python.policy.benchmark_eval --samples examples/sample_states.json --runs 20 --out reports/eval_benchmark.json
 ```
 
+## Supervised Local Loop
+Run policy to runtime queue execution over state samples:
+
+```bash
+python -m python.runtime.run_local_loop --samples examples/sample_states.json --out reports/local_loop_report.json
+```
+
+Use --window-inactive to verify safety blocking behavior.
+
 ## Git Workflow
 - Trunk-based with short-lived milestone branches.
 - Push once per completed phase milestone.

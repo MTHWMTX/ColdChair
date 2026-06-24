@@ -21,3 +21,12 @@ jobs:
 
       - name: Run tests
         run: python -m pytest -q
+
+      - name: Smoke run replay extraction
+        run: python -m python.replay.extract_timeline --replay examples/sample_replay.json --out reports/replay_states.jsonl
+
+      - name: Smoke run offline evaluation
+        run: python -m python.policy.run_offline_eval --samples reports/replay_states.jsonl --out reports/offline_eval_from_replay.json
+
+      - name: Smoke run local loop
+        run: python -m python.runtime.run_local_loop --samples examples/sample_states.json --out reports/local_loop_report.json

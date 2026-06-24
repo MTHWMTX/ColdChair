@@ -15,6 +15,8 @@
 - python/policy/benchmark_eval.py: Evaluation latency benchmark and metadata report.
 - python/perception: Frame capture and confidence scoring stubs.
 - python/runtime/action_queue.py: Safety-aware queue with kill switch, focus check, and rate limits.
+- python/runtime/local_loop.py: Supervised local decision-to-action loop runner.
+- python/runtime/run_local_loop.py: CLI entry point for local loop report generation.
 - contracts: Shared schemas used by Python and C# components.
 - contracts/action_intent.schema.json: Intent schema for runtime command payloads.
 - dotnet/runtime: Runtime orchestration and action queue skeleton.
