@@ -15,6 +15,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from python.replay.import_replays_cli import import_replays_from_directory
+from python.replay.build_balanced_dataset import build_balanced_dataset
 from python.training.dataset_manager import DatasetManager
 from python.training.policy_manager import PolicyManager
 from python.training.run_training import run_training
@@ -30,6 +31,17 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--reports-dir", default="reports", help="Reports directory")
 
     parser.add_argument("--dataset-id", default="replays_dataset", help="Dataset ID for imported replays")
+    parser.add_argument(
+        "--balance-by-subfolder",
+        action="store_true",
+        help="Balance dataset by top-level subfolder (e.g., h_vs_o, n_vs_u)",
+    )
+    parser.add_argument(
+        "--max-states-per-group",
+        type=int,
+        default=0,
+        help="Cap states per group when balancing by subfolder (0 = no cap)",
+    )
 
     parser.add_argument("--policy-version", default="v1.0", help="Policy version to train")
     parser.add_argument(
@@ -130,12 +142,22 @@ def main() -> int:
         print(f"  - Skipped: folder not found ({replay_dir})")
         return 1
 
-    count = import_replays_from_directory(
-        replay_dir=replay_dir,
-        output_file=output_file,
-        tag="replays",
-        verbose=True,
-    )
+    if args.balance_by_subfolder or args.max_states_per_group > 0:
+        summary = build_balanced_dataset(
+            replays_dir=replay_dir,
+            out_file=output_file,
+            max_states_per_group=args.max_states_per_group,
+            verbose=True,
+        )
+        count = int(summary["total_states"])
+        print(f"Balanced dataset groups: {summary['total_groups']}")
+    else:
+        count = import_replays_from_directory(
+            replay_dir=replay_dir,
+            output_file=output_file,
+            tag="replays",
+            verbose=True,
+        )
     if count <= 0:
         print("\nNo replay datasets were imported. Add .w3g files to replays/incoming.")
         return 1

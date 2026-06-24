@@ -146,7 +146,25 @@ Default replay drop folder:
 Useful options:
 - --skip-training (import/register only)
 - --policy-version v1.1
-- --train-dataset-id pro_combined
+- --train-dataset-id replays_dataset
+- --balance-by-subfolder --max-states-per-group 2000
+
+Race/matchup-balanced preprocessing (recommended before replay training):
+
+1. Organize replays into top-level subfolders under replays/incoming.
+	Example: replays/incoming/h_vs_o, replays/incoming/n_vs_u
+2. Build balanced dataset:
+
+```bash
+python -m python.replay.build_balanced_dataset --replays-dir replays/incoming --out datasets/replays_balanced.json --max-states-per-group 2000 --manifest reports/replays_balanced_manifest.json
+```
+
+3. Register and train on balanced dataset:
+
+```bash
+python -m python.training.orchestrate register-dataset --dataset-id replays_balanced --name "Race-Balanced Replays" --samples datasets/replays_balanced.json --tags "replays,race_balanced"
+python -m python.training.orchestrate train --policy-version v1.0 --dataset-id replays_balanced --out reports/training_result_balanced.json
+```
 
 ## System Dashboard\nView comprehensive system health and readiness metrics:\n\n```bash\n# Generate system dashboard with all aggregated metrics\npython -m python.runtime.generate_dashboard --out reports/system_dashboard.json\n```\n\nThe dashboard aggregates:\n- Pipeline health and report availability\n- Experiment results and validation gates\n- Scenario regression status\n- Battle.net readiness checklist progress\n- System-wide alerts and issues\n\n## Battle.net Readiness Management
 Track readiness for Battle.net integration with comprehensive checklists:
