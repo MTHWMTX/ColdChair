@@ -55,6 +55,9 @@ jobs:
       - name: Smoke export Battle.net readiness
         run: python -m python.bn_readiness.manage_readiness export --out reports/bn_readiness.json
 
+      - name: Generate system dashboard
+        run: python -m python.runtime.generate_dashboard --out reports/system_dashboard.json
+
       - name: Smoke run experiment with configuration
         run: python -c "from python.config.pipeline_config import create_default_config; import json; from pathlib import Path; config = create_default_config(); Path('examples/default_config.json').write_text(json.dumps(config.to_dict()))"; python -m python.config.run_experiment --config examples/default_config.json --samples examples/sample_states.json --out reports/experiment_result.json
 

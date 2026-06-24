@@ -92,7 +92,7 @@ Run strict drift gate and return non-zero on failures:
 python -m python.runtime.run_scenarios --scenario-dir scenarios/local_ai --baseline scenarios/local_ai/baseline_report.json --require-baseline-match --max-drift 0.0 --fail-on-drift --out reports/scenario_report_gated.json
 ```
 
-## Battle.net Readiness Management
+## System Dashboard\nView comprehensive system health and readiness metrics:\n\n```bash\n# Generate system dashboard with all aggregated metrics\npython -m python.runtime.generate_dashboard --out reports/system_dashboard.json\n```\n\nThe dashboard aggregates:\n- Pipeline health and report availability\n- Experiment results and validation gates\n- Scenario regression status\n- Battle.net readiness checklist progress\n- System-wide alerts and issues\n\n## Battle.net Readiness Management
 Track readiness for Battle.net integration with comprehensive checklists:
 
 ```bash
