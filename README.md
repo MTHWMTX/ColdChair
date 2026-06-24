@@ -196,6 +196,19 @@ Self-play report includes:
 - Per-tick intent/execution logs for both bots
 - Resource/unit progression signals for training analysis
 
+## Ranked Self-Play Tournament
+Run repeated side-swapped self-play matches with Elo-style rating updates:
+
+```bash
+python -m python.runtime.run_self_play_tournament --samples examples/sample_states.json --rounds 20 --ticks 80 --bot-a-label candidate --bot-b-label baseline --out reports/self_play_tournament_report.json
+```
+
+Tournament report includes:
+- Total games (2 per round)
+- Wins/losses/draws per label
+- Elo ratings for candidate and baseline
+- Per-game logs with side assignment and rating progression
+
 ## Health Report
 Generate a system health report aggregating all pipeline artifacts:
 
