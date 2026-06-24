@@ -92,6 +92,20 @@ Run strict drift gate and return non-zero on failures:
 python -m python.runtime.run_scenarios --scenario-dir scenarios/local_ai --baseline scenarios/local_ai/baseline_report.json --require-baseline-match --max-drift 0.0 --fail-on-drift --out reports/scenario_report_gated.json
 ```
 
+## Battle.net Readiness Management
+Track readiness for Battle.net integration with comprehensive checklists:
+
+```bash
+# Check readiness status
+python -m python.bn_readiness.manage_readiness status
+
+# Mark a check as complete
+python -m python.bn_readiness.manage_readiness mark-ready --phase phase6 --check local_loop_integration --completed-by user@email.com --notes "Completed on date"
+
+# Export readiness report
+python -m python.bn_readiness.manage_readiness export --out reports/bn_readiness.json
+```
+
 ## Configuration Management
 Manage pipeline configurations and run parameterized experiments:
 
