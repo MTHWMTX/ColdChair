@@ -14,6 +14,12 @@ class EvaluationSummary:
     gather_rate: float
 
 
+@dataclass
+class EvaluationGateResult:
+    passed: bool
+    reasons: list[str]
+
+
 class OfflinePolicyEvaluator:
     """Scores how often core intents are emitted over state samples."""
 
@@ -44,3 +50,32 @@ class OfflinePolicyEvaluator:
             attack_move_rate=mean(attack_rates),
             gather_rate=mean(gather_rates),
         )
+
+    def evaluate_gate(
+        self,
+        summary: EvaluationSummary,
+        *,
+        min_states: int = 1,
+        min_train_rate: float = 0.1,
+        min_gather_rate: float = 0.1,
+    ) -> EvaluationGateResult:
+        reasons: list[str] = []
+
+        if summary.total_states < min_states:
+            reasons.append(
+                f"total_states below threshold: {summary.total_states} < {min_states}"
+            )
+
+        if summary.train_unit_rate < min_train_rate:
+            reasons.append(
+                "train_unit_rate below threshold: "
+                f"{summary.train_unit_rate:.3f} < {min_train_rate:.3f}"
+            )
+
+        if summary.gather_rate < min_gather_rate:
+            reasons.append(
+                "gather_rate below threshold: "
+                f"{summary.gather_rate:.3f} < {min_gather_rate:.3f}"
+            )
+
+        return EvaluationGateResult(passed=len(reasons) == 0, reasons=reasons)

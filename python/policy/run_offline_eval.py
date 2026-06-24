@@ -17,6 +17,19 @@ def build_parser() -> argparse.ArgumentParser:
         default="reports/offline_eval.json",
         help="Output path for evaluation summary JSON",
     )
+    parser.add_argument("--min-states", type=int, default=1, help="Minimum number of states")
+    parser.add_argument(
+        "--min-train-rate",
+        type=float,
+        default=0.1,
+        help="Minimum acceptable train_unit intent rate",
+    )
+    parser.add_argument(
+        "--min-gather-rate",
+        type=float,
+        default=0.1,
+        help="Minimum acceptable gather_resources intent rate",
+    )
     return parser
 
 
@@ -26,12 +39,23 @@ def main() -> int:
     samples = load_state_samples(args.samples)
     evaluator = OfflinePolicyEvaluator()
     summary = evaluator.evaluate(samples)
+    gate = evaluator.evaluate_gate(
+        summary,
+        min_states=args.min_states,
+        min_train_rate=args.min_train_rate,
+        min_gather_rate=args.min_gather_rate,
+    )
+
+    payload = {
+        **asdict(summary),
+        "gate": asdict(gate),
+    }
 
     out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(json.dumps(asdict(summary), indent=2), encoding="utf-8")
+    out_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
-    print(json.dumps(asdict(summary), indent=2))
+    print(json.dumps(payload, indent=2))
     return 0
 
 

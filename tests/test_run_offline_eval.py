@@ -39,3 +39,5 @@ def test_run_offline_eval_writes_report(tmp_path: Path, monkeypatch) -> None:
     payload = json.loads(out_path.read_text(encoding="utf-8"))
     assert payload["total_states"] == 1
     assert payload["train_unit_rate"] == 1.0
+    assert payload["gate"]["passed"] is False
+    assert "gather_rate below threshold" in payload["gate"]["reasons"][0]
