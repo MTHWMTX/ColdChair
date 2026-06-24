@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "GameState",
+  "type": "object",
+  "required": [
+    "tick",
+    "resources",
+    "supply",
+    "units"
+  ],
+  "properties": {
+    "tick": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "resources": {
+      "type": "object",
+      "required": ["gold", "lumber"],
+      "properties": {
+        "gold": { "type": "integer", "minimum": 0 },
+        "lumber": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "supply": {
+      "type": "object",
+      "required": ["used", "cap"],
+      "properties": {
+        "used": { "type": "integer", "minimum": 0 },
+        "cap": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "units": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "owner", "type", "hp", "position"],
+        "properties": {
+          "id": { "type": "string" },
+          "owner": { "type": "string", "enum": ["self", "enemy", "neutral"] },
+          "type": { "type": "string" },
+          "hp": { "type": "number", "minimum": 0 },
+          "position": {
+            "type": "object",
+            "required": ["x", "y"],
+            "properties": {
+              "x": { "type": "number" },
+              "y": { "type": "number" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

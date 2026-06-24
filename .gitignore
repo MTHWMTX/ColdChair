@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
+# Data
+*.w3g
+*.onnx
+*.pt
+
+# Logs and reports
+logs/
+reports/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+# .NET
+bin/
+obj/
