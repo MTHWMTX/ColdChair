@@ -92,6 +92,29 @@ Run strict drift gate and return non-zero on failures:
 python -m python.runtime.run_scenarios --scenario-dir scenarios/local_ai --baseline scenarios/local_ai/baseline_report.json --require-baseline-match --max-drift 0.0 --fail-on-drift --out reports/scenario_report_gated.json
 ```
 
+## Training Framework
+Start iterative policy improvement with the training orchestrator:
+
+```bash
+# Initialize a policy version
+python -m python.training.orchestrate init-policy --version v1.0 --description "Initial baseline policy"
+
+# Register training dataset
+python -m python.training.orchestrate register-dataset --dataset-id ds1 --name "Training Set" --samples data/replays.json --tags "training,baseline"
+
+# Run training on dataset
+python -m python.training.orchestrate train --policy-version v1.0 --dataset-id ds1 --out reports/training_result.json
+
+# Check training status
+python -m python.training.orchestrate status
+```
+
+The framework tracks:
+- Multiple policy versions with metadata
+- Training datasets with tags and sample counts
+- Training runs and metrics
+- Best performing version across all runs
+
 ## System Dashboard\nView comprehensive system health and readiness metrics:\n\n```bash\n# Generate system dashboard with all aggregated metrics\npython -m python.runtime.generate_dashboard --out reports/system_dashboard.json\n```\n\nThe dashboard aggregates:\n- Pipeline health and report availability\n- Experiment results and validation gates\n- Scenario regression status\n- Battle.net readiness checklist progress\n- System-wide alerts and issues\n\n## Battle.net Readiness Management
 Track readiness for Battle.net integration with comprehensive checklists:
 

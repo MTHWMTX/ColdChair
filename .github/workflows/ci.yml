@@ -55,6 +55,15 @@ jobs:
       - name: Smoke export Battle.net readiness
         run: python -m python.bn_readiness.manage_readiness export --out reports/bn_readiness.json
 
+      - name: Smoke init training policy
+        run: python -m python.training.orchestrate init-policy --version v1.0_ci --description "CI baseline policy"
+
+      - name: Smoke register training dataset
+        run: python -m python.training.orchestrate register-dataset --dataset-id ds_ci --name "CI Dataset" --samples examples/sample_states.json --tags "ci,test"
+
+      - name: Smoke run training
+        run: python -m python.training.orchestrate train --policy-version v1.0_ci --dataset-id ds_ci --out reports/training_result.json
+
       - name: Generate system dashboard
         run: python -m python.runtime.generate_dashboard --out reports/system_dashboard.json
 

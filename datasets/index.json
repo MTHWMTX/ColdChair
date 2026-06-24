@@ -1,0 +1,35 @@
+{
+  "ds1": {
+    "dataset_id": "ds1",
+    "name": "Dataset 1",
+    "description": "Desc",
+    "sample_count": 2,
+    "source": "replay",
+    "created_at": "2026-06-24T10:17:03.423067",
+    "tags": [
+      "training"
+    ]
+  },
+  "ds2": {
+    "dataset_id": "ds2",
+    "name": "Dataset 2",
+    "description": "Desc",
+    "sample_count": 2,
+    "source": "replay",
+    "created_at": "2026-06-24T10:17:03.425108",
+    "tags": [
+      "testing"
+    ]
+  },
+  "ds3": {
+    "dataset_id": "ds3",
+    "name": "Dataset 3",
+    "description": "Desc",
+    "sample_count": 2,
+    "source": "replay",
+    "created_at": "2026-06-24T10:17:03.427308",
+    "tags": [
+      "training"
+    ]
+  }
+}
