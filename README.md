@@ -36,6 +36,27 @@ python -m python.policy.run_offline_eval --samples examples/sample_states.json -
 
 3. Review the generated report file in reports.
 
+## Replay Extraction
+1. Prepare a placeholder replay JSON file in the current format used by examples/sample_replay.json.
+2. Run:
+
+```bash
+python -m python.replay.extract_timeline --replay examples/sample_replay.json --out reports/replay_states.jsonl
+```
+
+3. Feed extracted output into offline evaluation:
+
+```bash
+python -m python.policy.run_offline_eval --samples reports/replay_states.jsonl --out reports/offline_eval_from_replay.json
+```
+
+## Benchmark
+Run evaluation latency benchmark:
+
+```bash
+python -m python.policy.benchmark_eval --samples examples/sample_states.json --runs 20 --out reports/eval_benchmark.json
+```
+
 ## Git Workflow
 - Trunk-based with short-lived milestone branches.
 - Push once per completed phase milestone.
