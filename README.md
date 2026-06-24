@@ -140,9 +140,8 @@ One-command replay import + registration + training:
 python scripts/import_and_train_replays.py
 ```
 
-Default replay drop folders:
-- replays/epicwar
-- replays/eso
+Default replay drop folder:
+- replays/incoming
 
 Useful options:
 - --skip-training (import/register only)

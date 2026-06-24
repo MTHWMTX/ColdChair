@@ -22,17 +22,14 @@ from python.training.run_training import run_training
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Import epicwar/eso replays, register datasets, and run training"
+        description="Import replay folder, register dataset, and run training"
     )
-    parser.add_argument("--epicwar-dir", default="replays/epicwar", help="EpicWar replay folder")
-    parser.add_argument("--eso-dir", default="replays/eso", help="ESO replay folder")
+    parser.add_argument("--replays-dir", default="replays/incoming", help="Replay drop folder")
     parser.add_argument("--datasets-dir", default="datasets", help="Datasets directory")
     parser.add_argument("--policies-dir", default="policies", help="Policies directory")
     parser.add_argument("--reports-dir", default="reports", help="Reports directory")
 
-    parser.add_argument("--epicwar-dataset-id", default="epicwar_pro", help="Dataset ID for EpicWar")
-    parser.add_argument("--eso-dataset-id", default="eso_pro", help="Dataset ID for ESO")
-    parser.add_argument("--combined-dataset-id", default="pro_combined", help="Dataset ID for combined data")
+    parser.add_argument("--dataset-id", default="replays_dataset", help="Dataset ID for imported replays")
 
     parser.add_argument("--policy-version", default="v1.0", help="Policy version to train")
     parser.add_argument(
@@ -54,7 +51,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--train-dataset-id",
         default="",
-        help="Dataset ID to train on (default: combined, else first available source)",
+        help="Dataset ID to train on (default: --dataset-id)",
     )
     return parser
 
@@ -115,6 +112,8 @@ def _ensure_policy(
 def main() -> int:
     args = build_parser().parse_args()
 
+    replays_dir = args.replays_dir
+
     datasets_dir = Path(args.datasets_dir)
     datasets_dir.mkdir(parents=True, exist_ok=True)
     reports_dir = Path(args.reports_dir)
@@ -123,72 +122,32 @@ def main() -> int:
     dataset_manager = DatasetManager(datasets_dir)
     dataset_manager._load_metadata()
 
-    sources = [
-        {
-            "label": "epicwar",
-            "replay_dir": Path(args.epicwar_dir),
-            "dataset_id": args.epicwar_dataset_id,
-            "name": "EpicWar Pro Replays",
-            "tags": ["epicwar", "pro", "tournament"],
-            "out_file": datasets_dir / "epicwar_extracted.json",
-        },
-        {
-            "label": "eso",
-            "replay_dir": Path(args.eso_dir),
-            "dataset_id": args.eso_dataset_id,
-            "name": "ESO Pro Replays",
-            "tags": ["eso", "pro", "tournament"],
-            "out_file": datasets_dir / "eso_extracted.json",
-        },
-    ]
+    replay_dir = Path(replays_dir)
+    output_file = datasets_dir / "replays_extracted.json"
 
-    available_dataset_ids: list[str] = []
-    combined_samples: list[dict] = []
-
-    for source in sources:
-        replay_dir = source["replay_dir"]
-        print(f"\n[{source['label']}] Importing from {replay_dir}")
-
-        if not replay_dir.exists():
-            print(f"  - Skipped: folder not found ({replay_dir})")
-            continue
-
-        count = import_replays_from_directory(
-            replay_dir=replay_dir,
-            output_file=source["out_file"],
-            tag=source["label"],
-            verbose=True,
-        )
-        if count <= 0:
-            print("  - Skipped: no states extracted")
-            continue
-
-        combined_samples.extend(_load_json_array(source["out_file"]))
-        _register_dataset(
-            manager=dataset_manager,
-            dataset_id=source["dataset_id"],
-            name=source["name"],
-            description=f"Imported from {replay_dir}",
-            sample_path=source["out_file"],
-            tags=source["tags"],
-        )
-        available_dataset_ids.append(source["dataset_id"])
-
-    if not available_dataset_ids:
-        print("\nNo replay datasets were imported. Add .w3g files to replays/epicwar or replays/eso.")
+    print(f"\n[replays] Importing from {replay_dir}")
+    if not replay_dir.exists():
+        print(f"  - Skipped: folder not found ({replay_dir})")
         return 1
 
-    combined_path = datasets_dir / "pro_combined_extracted.json"
-    combined_path.write_text(json.dumps(combined_samples, indent=2), encoding="utf-8")
+    count = import_replays_from_directory(
+        replay_dir=replay_dir,
+        output_file=output_file,
+        tag="replays",
+        verbose=True,
+    )
+    if count <= 0:
+        print("\nNo replay datasets were imported. Add .w3g files to replays/incoming.")
+        return 1
+
     _register_dataset(
         manager=dataset_manager,
-        dataset_id=args.combined_dataset_id,
-        name="Combined Pro Replays",
-        description="Combined imported replays from all configured sources",
-        sample_path=combined_path,
-        tags=["combined", "pro", "tournament"],
+        dataset_id=args.dataset_id,
+        name="Imported Replays",
+        description=f"Imported from {replay_dir}",
+        sample_path=output_file,
+        tags=["replays", "training"],
     )
-    available_dataset_ids.append(args.combined_dataset_id)
 
     if args.skip_training:
         print("\nTraining skipped (--skip-training).")
@@ -204,16 +163,11 @@ def main() -> int:
     ):
         return 1
 
-    train_dataset_id = args.train_dataset_id or args.combined_dataset_id
+    train_dataset_id = args.train_dataset_id or args.dataset_id
     dataset_path = dataset_manager.get_dataset_path(train_dataset_id)
     if dataset_path is None:
-        fallback = (
-            args.combined_dataset_id
-            if args.combined_dataset_id in available_dataset_ids
-            else available_dataset_ids[0]
-        )
-        dataset_path = dataset_manager.get_dataset_path(fallback)
-        train_dataset_id = fallback
+        dataset_path = dataset_manager.get_dataset_path(args.dataset_id)
+        train_dataset_id = args.dataset_id
 
     if dataset_path is None:
         print("No dataset file found for training.")
