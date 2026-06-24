@@ -59,4 +59,5 @@ def test_parser_rejects_non_json_replay(tmp_path: Path) -> None:
         parser.parse(replay_path)
         assert False, "Expected ValueError"
     except ValueError as exc:
-        assert "JSON replay placeholder" in str(exc)
+        # Now parser validates .w3g signature
+        assert "Failed to parse" in str(exc) or "Invalid .w3g" in str(exc)
