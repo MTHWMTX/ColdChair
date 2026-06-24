@@ -1,0 +1,1 @@
+{"name": "default_safety_first", "description": "Safety-first default with dry-run enabled", "max_actions_per_second": 1000000.0, "online_mode_enabled": false, "dry_run_enabled": true, "window_active_required": true, "min_train_rate": 0.0, "min_gather_rate": 0.0, "min_executed_rate": 0.8, "tags": [], "metadata": {}}

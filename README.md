@@ -92,6 +92,17 @@ Run strict drift gate and return non-zero on failures:
 python -m python.runtime.run_scenarios --scenario-dir scenarios/local_ai --baseline scenarios/local_ai/baseline_report.json --require-baseline-match --max-drift 0.0 --fail-on-drift --out reports/scenario_report_gated.json
 ```
 
+## Configuration Management
+Manage pipeline configurations and run parameterized experiments:
+
+```bash
+# Create a configuration
+python -c "from python.config.pipeline_config import create_default_config; import json; from pathlib import Path; config = create_default_config(); Path('config.json').write_text(json.dumps(config.to_dict()))"
+
+# Run experiment with configuration
+python -m python.config.run_experiment --config config.json --samples examples/sample_states.json --out reports/experiment_result.json --compare-to reports/baseline_result.json
+```
+
 ## End-to-End Pipeline
 Run a complete pipeline from state loading through execution with telemetry:
 
