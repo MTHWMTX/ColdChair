@@ -20,6 +20,9 @@
 - python/runtime/run_local_loop.py: CLI entry point for local loop report generation.
 - python/runtime/run_scenarios.py: Scenario-pack regression runner for local loop outcomes.
 - python/runtime/create_scenario_baseline.py: Baseline snapshot generator for scenario drift checks.
+- python/runtime/e2e_pipeline.py: End-to-end orchestrator with telemetry collection.
+- python/runtime/run_e2e_pipeline.py: CLI entry point for end-to-end pipeline execution.
+- python/runtime/generate_health_report.py: System health aggregator across all pipeline artifacts.
 - contracts: Shared schemas used by Python and C# components.
 - contracts/action_intent.schema.json: Intent schema for runtime command payloads.
 - python/contracts/validator.py: Shared JSON-schema validation for game state and action intents.

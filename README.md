@@ -92,6 +92,20 @@ Run strict drift gate and return non-zero on failures:
 python -m python.runtime.run_scenarios --scenario-dir scenarios/local_ai --baseline scenarios/local_ai/baseline_report.json --require-baseline-match --max-drift 0.0 --fail-on-drift --out reports/scenario_report_gated.json
 ```
 
+## End-to-End Pipeline
+Run a complete pipeline from state loading through execution with telemetry:
+
+```bash
+python -m python.runtime.run_e2e_pipeline --samples examples/sample_states.json --out reports/e2e_report.json --telemetry reports/e2e_telemetry.json
+```
+
+## Health Report
+Generate a system health report aggregating all pipeline artifacts:
+
+```bash
+python -m python.runtime.generate_health_report --reports-dir reports --out reports/health_report.json
+```
+
 ## Contract Validation
 - State samples are validated against contracts/game_state.schema.json at load time.
 - Action intents are validated against contracts/action_intent.schema.json before queueing.

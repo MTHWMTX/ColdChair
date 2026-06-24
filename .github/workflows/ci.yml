@@ -48,3 +48,9 @@ jobs:
 
       - name: Validate .NET action-intent contract
         run: dotnet run --project dotnet/runtime/ColdChair.Runtime.csproj -- validate-action-intent --file examples/sample_action_intent.json
+
+      - name: Smoke run end-to-end pipeline
+        run: python -m python.runtime.run_e2e_pipeline --samples examples/sample_states.json --out reports/e2e_report.json --telemetry reports/e2e_telemetry.json
+
+      - name: Generate health report
+        run: python -m python.runtime.generate_health_report --reports-dir reports --out reports/health_report.json
