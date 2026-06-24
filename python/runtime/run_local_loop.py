@@ -8,7 +8,9 @@ from pathlib import Path
 from python.replay.sample_loader import load_state_samples
 from python.runtime.action_queue import ActionQueue, RuntimeSafetyConfig
 from python.runtime.executor import IntentExecutor
+from python.runtime.game_adapter import SupervisedGameAdapter
 from python.runtime.local_loop import LocalLoopRunner
+from python.runtime.targeting import CommandEnricher, TargetProfile
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -40,7 +42,31 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--live-execution",
         action="store_true",
-        help="Disable dry-run mode in executor telemetry",
+        help="Disable dry-run mode and attempt live command dispatch",
+    )
+    parser.add_argument(
+        "--allow-live-input",
+        action="store_true",
+        help="Explicitly allow OS input dispatch (required for actual game control)",
+    )
+    parser.add_argument(
+        "--window-title-contains",
+        default="Warcraft III",
+        help="Required substring in active window title for live dispatch",
+    )
+    parser.add_argument(
+        "--no-window-check",
+        action="store_true",
+        help="Disable active-window title safety check (not recommended)",
+    )
+    parser.add_argument(
+        "--confirm-each-action",
+        action="store_true",
+        help="Prompt before every live action for supervised testing",
+    )
+    parser.add_argument(
+        "--target-profile",
+        help="Path to target calibration profile JSON used to resolve screen coordinates",
     )
     return parser
 
@@ -56,7 +82,24 @@ def main() -> int:
         )
     )
     queue.set_active_window_ok(not args.window_inactive)
-    executor = IntentExecutor(dry_run=not args.live_execution)
+    adapter = None
+    command_enricher = None
+    if args.target_profile:
+        command_enricher = CommandEnricher(TargetProfile.from_file(args.target_profile))
+
+    if args.live_execution:
+        adapter = SupervisedGameAdapter(
+            allow_live_input=args.allow_live_input,
+            required_window_substring=args.window_title_contains,
+            require_active_window=not args.no_window_check,
+            confirm_before_action=args.confirm_each_action,
+        )
+
+    executor = IntentExecutor(
+        dry_run=not args.live_execution,
+        adapter=adapter,
+        command_enricher=command_enricher,
+    )
 
     runner = LocalLoopRunner(queue=queue, executor=executor)
     summary, logs = runner.run_states(samples)

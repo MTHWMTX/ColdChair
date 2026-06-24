@@ -32,6 +32,7 @@ def test_local_loop_executes_actions() -> None:
     assert logs[0]["status"] == "executed"
     assert logs[0]["command"]["op"] == "key_press"
     assert logs[0]["dry_run"] is True
+    assert logs[0]["reason"] == ""
 
 
 def test_local_loop_blocks_when_window_inactive() -> None:
@@ -86,3 +87,81 @@ def test_local_loop_cli_writes_report(tmp_path: Path, monkeypatch) -> None:
     assert payload["summary"]["total_states"] == 1
     assert payload["summary"]["executed_actions"] == 1
     assert payload["logs"][0]["dry_run"] is True
+
+
+def test_local_loop_live_execution_without_opt_in_is_blocked(tmp_path: Path, monkeypatch) -> None:
+    sample_path = tmp_path / "samples.json"
+    out_path = tmp_path / "loop_report_live.json"
+
+    sample_path.write_text(
+        """[
+  {
+    \"resources\": {\"gold\": 200, \"lumber\": 60},
+    \"supply\": {\"used\": 10, \"cap\": 20},
+    \"units\": [{\"owner\": \"self\", \"id\": \"a\", \"type\": \"peasant\", \"hp\": 100, \"position\": {\"x\": 1, \"y\": 1}}]
+  }
+]""",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "run_local_loop.py",
+            "--samples",
+            str(sample_path),
+            "--out",
+            str(out_path),
+            "--live-execution",
+        ],
+    )
+
+    code = main()
+    assert code == 0
+    payload = json.loads(out_path.read_text(encoding="utf-8"))
+    assert payload["logs"][0]["status"] == "blocked"
+    assert payload["logs"][0]["reason"] == "live_input_not_allowed"
+
+
+def test_local_loop_target_profile_adds_coordinates(tmp_path: Path, monkeypatch) -> None:
+    sample_path = tmp_path / "samples.json"
+    profile_path = tmp_path / "profile.json"
+    out_path = tmp_path / "loop_report_profile.json"
+
+    sample_path.write_text(
+        """[
+  {
+    \"resources\": {\"gold\": 20, \"lumber\": 0},
+    \"supply\": {\"used\": 9, \"cap\": 20},
+    \"units\": [{\"owner\": \"self\", \"id\": \"a\", \"type\": \"peasant\", \"hp\": 100, \"position\": {\"x\": 1, \"y\": 1}}]
+  }
+]""",
+        encoding="utf-8",
+    )
+
+    profile_path.write_text(
+        """{
+  \"resource_points\": [{\"x\": 900.0, \"y\": 600.0}]
+}""",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "run_local_loop.py",
+            "--samples",
+            str(sample_path),
+            "--out",
+            str(out_path),
+            "--target-profile",
+            str(profile_path),
+        ],
+    )
+
+    code = main()
+    assert code == 0
+    payload = json.loads(out_path.read_text(encoding="utf-8"))
+    assert payload["logs"][0]["command"]["op"] == "right_click_resource"
+    assert payload["logs"][0]["command"]["x"] == 900.0
+    assert payload["logs"][0]["command"]["y"] == 600.0

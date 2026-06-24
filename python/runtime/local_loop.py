@@ -44,12 +44,13 @@ class LocalLoopRunner:
                 logs.append({"index": idx, "status": "blocked"})
                 continue
 
-            execution = self.executor.execute(action)
+            execution = self.executor.execute(action, state=state)
 
             logs.append(
                 {
                     "index": idx,
                     "status": execution.status,
+                    "reason": execution.reason,
                     "action": {
                         "type": action.type,
                         "priority": action.priority,

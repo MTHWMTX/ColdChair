@@ -67,6 +67,25 @@ python -m python.runtime.run_local_loop --samples examples/sample_states.json --
 Use --window-inactive to verify safety blocking behavior.
 Use --live-execution to disable dry-run telemetry mode.
 
+For supervised local in-game testing (Windows):
+
+```bash
+python -m python.runtime.run_local_loop \
+	--samples examples/sample_states.json \
+	--out reports/local_loop_live_report.json \
+	--live-execution \
+	--allow-live-input \
+	--target-profile examples/live_target_profile.json \
+	--window-title-contains "Warcraft III" \
+	--confirm-each-action
+```
+
+Safety notes:
+- Live input is blocked unless --allow-live-input is provided.
+- Active window title must match --window-title-contains (unless --no-window-check is set).
+- Use --target-profile to map abstract/world coordinates to concrete screen coordinates.
+- In MVP, full perception is still pending; profile/resource_nodes provide target coordinates.
+
 ## Scenario Pack Regression
 Run all scenarios in the local scenario pack:
 
