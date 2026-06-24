@@ -8,7 +8,9 @@
 
 ## Modules
 - python/replay: Replay parsing and state extraction.
+- python/replay/sample_loader.py: Normalized state sample loading from JSON and JSONL.
 - python/policy: Baseline rule policy and offline evaluator.
+- python/policy/run_offline_eval.py: CLI entry point for offline policy scoring reports.
 - python/perception: Frame capture and confidence scoring stubs.
 - contracts: Shared schemas used by Python and C# components.
 - dotnet/runtime: Runtime orchestration and action queue skeleton.

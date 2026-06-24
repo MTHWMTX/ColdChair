@@ -26,6 +26,16 @@ Safety-first Warcraft III: The Frozen Throne bot foundation.
 2. Install dependencies from requirements.txt.
 3. Run tests with pytest.
 
+## Offline Evaluation
+1. Prepare state samples in JSON or JSONL format.
+2. Run:
+
+```bash
+python -m python.policy.run_offline_eval --samples examples/sample_states.json --out reports/offline_eval.json
+```
+
+3. Review the generated report file in reports.
+
 ## Git Workflow
 - Trunk-based with short-lived milestone branches.
 - Push once per completed phase milestone.
