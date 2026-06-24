@@ -56,3 +56,58 @@ def test_build_balanced_dataset_empty_returns_zero(tmp_path: Path) -> None:
     assert summary["total_states"] == 0
     assert summary["total_groups"] == 0
     assert not out.exists()
+
+
+def test_build_balanced_dataset_groups_by_map(tmp_path: Path) -> None:
+    replays = tmp_path / "incoming"
+    map_a = {
+        "map_name": "Echo Isles",
+        "player_count": 2,
+        "duration_ms": 1000,
+        "events": [
+            {
+                "type": "state",
+                "state": {
+                    "tick": 1,
+                    "resources": {"gold": 200, "lumber": 60},
+                    "supply": {"used": 10, "cap": 20},
+                    "units": [],
+                },
+            }
+        ],
+    }
+    map_b = {
+        "map_name": "Terenas Stand",
+        "player_count": 2,
+        "duration_ms": 1000,
+        "events": [
+            {
+                "type": "state",
+                "state": {
+                    "tick": 2,
+                    "resources": {"gold": 200, "lumber": 60},
+                    "supply": {"used": 10, "cap": 20},
+                    "units": [],
+                },
+            }
+        ],
+    }
+
+    (replays / "set1").mkdir(parents=True, exist_ok=True)
+    (replays / "set2").mkdir(parents=True, exist_ok=True)
+    (replays / "set1" / "m1.json").write_text(json.dumps(map_a), encoding="utf-8")
+    (replays / "set2" / "m2.json").write_text(json.dumps(map_b), encoding="utf-8")
+
+    out = tmp_path / "balanced_maps.json"
+    summary = build_balanced_dataset(
+        replays,
+        out,
+        group_mode="map",
+        max_states_per_group=0,
+        verbose=False,
+    )
+
+    assert summary["group_mode"] == "map"
+    assert summary["total_groups"] == 2
+    assert "echo_isles" in summary["groups"]
+    assert "terenas_stand" in summary["groups"]

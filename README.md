@@ -140,6 +140,24 @@ One-command replay import + registration + training:
 python scripts/import_and_train_replays.py
 ```
 
+Polite replay link discovery from Warcraft3.Info (robots-aware and rate-limited):
+
+```bash
+python scripts/download_wc3info_replays.py --dry-run
+```
+
+Safe defaults used by this script:
+- Honors robots.txt for all requests.
+- Min delay 4s + up to 2s random jitter between requests.
+- Max 20 article pages per run.
+- Retry/backoff only for transient failures.
+
+Example actual download run:
+
+```bash
+python scripts/download_wc3info_replays.py --out-dir replays/incoming
+```
+
 Default replay drop folder:
 - replays/incoming
 
@@ -147,7 +165,7 @@ Useful options:
 - --skip-training (import/register only)
 - --policy-version v1.1
 - --train-dataset-id replays_dataset
-- --balance-by-subfolder --max-states-per-group 2000
+- --balance-dataset --group-mode subfolder_map --max-states-per-group 2000
 
 Race/matchup-balanced preprocessing (recommended before replay training):
 
@@ -157,6 +175,17 @@ Race/matchup-balanced preprocessing (recommended before replay training):
 
 ```bash
 python -m python.replay.build_balanced_dataset --replays-dir replays/incoming --out datasets/replays_balanced.json --max-states-per-group 2000 --manifest reports/replays_balanced_manifest.json
+```
+
+Map-aware options:
+- --group-mode subfolder (default)
+- --group-mode map
+- --group-mode subfolder_map
+
+Example using map-aware grouping:
+
+```bash
+python -m python.replay.build_balanced_dataset --replays-dir replays/incoming --group-mode subfolder_map --out datasets/replays_balanced.json --max-states-per-group 2000 --manifest reports/replays_balanced_manifest.json
 ```
 
 3. Register and train on balanced dataset:

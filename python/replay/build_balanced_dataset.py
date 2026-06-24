@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from python.replay.import_replays_cli import parse_replay
+from python.replay.import_replays_cli import parse_replay_with_metadata
 
 
 def _group_name_for_file(replays_dir: Path, replay_file: Path) -> str:
@@ -15,11 +15,32 @@ def _group_name_for_file(replays_dir: Path, replay_file: Path) -> str:
     return str(rel_parent.parts[0])
 
 
+def _normalize_map_name(raw: str) -> str:
+    name = (raw or "unknown").strip().lower()
+    if not name:
+        return "unknown"
+    return name.replace(" ", "_")
+
+
+def _select_group_name(
+    *,
+    group_mode: str,
+    subfolder_group: str,
+    map_name: str,
+) -> str:
+    if group_mode == "map":
+        return map_name
+    if group_mode == "subfolder_map":
+        return f"{subfolder_group}__{map_name}"
+    return subfolder_group
+
+
 def build_balanced_dataset(
     replays_dir: str | Path,
     out_file: str | Path,
     *,
     max_states_per_group: int = 0,
+    group_mode: str = "subfolder",
     verbose: bool = True,
 ) -> dict[str, Any]:
     root = Path(replays_dir)
@@ -31,19 +52,29 @@ def build_balanced_dataset(
 
     grouped_states: dict[str, list[dict[str, Any]]] = {}
     file_counts: dict[str, int] = {}
+    map_counts: dict[str, int] = {}
 
     for replay_file in replay_files:
-        group = _group_name_for_file(root, replay_file)
-        samples = parse_replay(replay_file, verbose=verbose)
+        subfolder_group = _group_name_for_file(root, replay_file)
+        samples, metadata = parse_replay_with_metadata(replay_file, verbose=verbose)
         if not samples:
             continue
+
+        map_name = _normalize_map_name(str(metadata.get("map_name", "unknown")))
+        group = _select_group_name(
+            group_mode=group_mode,
+            subfolder_group=subfolder_group,
+            map_name=map_name,
+        )
 
         if group not in grouped_states:
             grouped_states[group] = []
             file_counts[group] = 0
+            map_counts[group] = 0
 
         grouped_states[group].extend(samples)
         file_counts[group] += 1
+        map_counts[group] += 1
 
     if not grouped_states:
         return {
@@ -66,6 +97,7 @@ def build_balanced_dataset(
             "files": file_counts[group],
             "states_before_cap": len(states),
             "states_after_cap": len(selected),
+            "replay_entries": map_counts[group],
         }
 
     out_path = Path(out_file)
@@ -76,6 +108,7 @@ def build_balanced_dataset(
         "total_states": len(balanced),
         "total_groups": len(group_summary),
         "groups": group_summary,
+        "group_mode": group_mode,
         "max_states_per_group": max_states_per_group,
         "out_file": str(out_path),
     }
@@ -87,6 +120,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Build race/matchup-balanced replay dataset")
     parser.add_argument("--replays-dir", default="replays/incoming", help="Replay root directory")
     parser.add_argument("--out", default="datasets/replays_balanced.json", help="Output JSON dataset")
+    parser.add_argument(
+        "--group-mode",
+        choices=["subfolder", "map", "subfolder_map"],
+        default="subfolder",
+        help="Grouping strategy for balancing",
+    )
     parser.add_argument(
         "--max-states-per-group",
         type=int,
@@ -103,6 +142,7 @@ def main() -> int:
         replays_dir=args.replays_dir,
         out_file=args.out,
         max_states_per_group=args.max_states_per_group,
+        group_mode=args.group_mode,
         verbose=True,
     )
 

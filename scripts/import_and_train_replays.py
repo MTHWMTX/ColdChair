@@ -32,9 +32,15 @@ def build_parser() -> argparse.ArgumentParser:
 
     parser.add_argument("--dataset-id", default="replays_dataset", help="Dataset ID for imported replays")
     parser.add_argument(
-        "--balance-by-subfolder",
+        "--balance-dataset",
         action="store_true",
-        help="Balance dataset by top-level subfolder (e.g., h_vs_o, n_vs_u)",
+        help="Build balanced dataset before registration/training",
+    )
+    parser.add_argument(
+        "--group-mode",
+        choices=["subfolder", "map", "subfolder_map"],
+        default="subfolder",
+        help="Grouping strategy used when balancing dataset",
     )
     parser.add_argument(
         "--max-states-per-group",
@@ -142,15 +148,18 @@ def main() -> int:
         print(f"  - Skipped: folder not found ({replay_dir})")
         return 1
 
-    if args.balance_by_subfolder or args.max_states_per_group > 0:
+    if args.balance_dataset or args.max_states_per_group > 0:
         summary = build_balanced_dataset(
             replays_dir=replay_dir,
             out_file=output_file,
             max_states_per_group=args.max_states_per_group,
+            group_mode=args.group_mode,
             verbose=True,
         )
         count = int(summary["total_states"])
-        print(f"Balanced dataset groups: {summary['total_groups']}")
+        print(
+            f"Balanced dataset groups: {summary['total_groups']} (mode={summary['group_mode']})"
+        )
     else:
         count = import_replays_from_directory(
             replay_dir=replay_dir,

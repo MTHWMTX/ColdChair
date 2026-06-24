@@ -12,18 +12,33 @@ from typing import Optional
 from python.replay.w3g_parser import W3GParser
 
 
-def parse_replay(replay_path: Path, verbose: bool = False) -> list[dict]:
-    """Parse a single replay file and extract game states."""
+def parse_replay_with_metadata(replay_path: Path, verbose: bool = False) -> tuple[list[dict], dict]:
+    """Parse a single replay file and return samples with metadata."""
     parser = W3GParser()
 
     try:
         parsed = parser.parse(replay_path)
         samples = parser.to_game_state_samples(parsed)
-        return samples
+        metadata = {
+            "map_name": str(parsed.map_name or "unknown"),
+            "player_count": int(parsed.player_count or 0),
+            "source_path": str(parsed.source_path),
+        }
+        return samples, metadata
     except Exception as e:
         if verbose:
             print(f"⚠️  Failed to parse {replay_path.name}: {e}", file=sys.stderr)
-        return []
+        return [], {
+            "map_name": "unknown",
+            "player_count": 0,
+            "source_path": str(replay_path),
+        }
+
+
+def parse_replay(replay_path: Path, verbose: bool = False) -> list[dict]:
+    """Parse a single replay file and extract game states."""
+    samples, _ = parse_replay_with_metadata(replay_path, verbose=verbose)
+    return samples
 
 
 def import_replays_from_directory(
