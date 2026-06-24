@@ -134,6 +134,21 @@ The framework tracks:
 - Training runs and metrics
 - Best performing version across all runs
 
+One-command replay import + registration + training:
+
+```bash
+python scripts/import_and_train_replays.py
+```
+
+Default replay drop folders:
+- replays/epicwar
+- replays/eso
+
+Useful options:
+- --skip-training (import/register only)
+- --policy-version v1.1
+- --train-dataset-id pro_combined
+
 ## System Dashboard\nView comprehensive system health and readiness metrics:\n\n```bash\n# Generate system dashboard with all aggregated metrics\npython -m python.runtime.generate_dashboard --out reports/system_dashboard.json\n```\n\nThe dashboard aggregates:\n- Pipeline health and report availability\n- Experiment results and validation gates\n- Scenario regression status\n- Battle.net readiness checklist progress\n- System-wide alerts and issues\n\n## Battle.net Readiness Management
 Track readiness for Battle.net integration with comprehensive checklists:
 
@@ -165,6 +180,21 @@ Run a complete pipeline from state loading through execution with telemetry:
 ```bash
 python -m python.runtime.run_e2e_pipeline --samples examples/sample_states.json --out reports/e2e_report.json --telemetry reports/e2e_telemetry.json
 ```
+
+## Offline Self-Play
+Run two bot instances against each other in a deterministic offline arena:
+
+```bash
+python -m python.runtime.run_self_play --samples examples/sample_states.json --ticks 80 --out reports/self_play_report.json
+```
+
+Alternative seed format:
+- Use --initial-state with a shared-state JSON object containing players.bot_a and players.bot_b.
+
+Self-play report includes:
+- Winner (bot_a, bot_b, draw)
+- Per-tick intent/execution logs for both bots
+- Resource/unit progression signals for training analysis
 
 ## Health Report
 Generate a system health report aggregating all pipeline artifacts:
