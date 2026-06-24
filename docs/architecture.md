@@ -14,7 +14,9 @@
 - python/policy/run_offline_eval.py: CLI entry point for offline policy scoring reports.
 - python/policy/benchmark_eval.py: Evaluation latency benchmark and metadata report.
 - python/perception: Frame capture and confidence scoring stubs.
+- python/runtime/action_queue.py: Safety-aware queue with kill switch, focus check, and rate limits.
 - contracts: Shared schemas used by Python and C# components.
+- contracts/action_intent.schema.json: Intent schema for runtime command payloads.
 - dotnet/runtime: Runtime orchestration and action queue skeleton.
 - tests: Unit and integration tests.
 

@@ -17,7 +17,7 @@ Safety-first Warcraft III: The Frozen Throne bot foundation.
 1. Phase 1: Project definition and guardrails.
 2. Phase 2: Core domain model and replay pipeline.
 3. Phase 3: Offline policy evaluation.
-4. Phase 4: Vision and control foundations.
+4. Phase 4: Vision and control foundations, including safety-aware action queue.
 5. Phase 5: Local end-to-end loop versus AI.
 6. Phase 6: Battle.net readiness checks without matchmaking automation.
 
