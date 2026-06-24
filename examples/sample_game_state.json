@@ -1,0 +1,14 @@
+{
+  "tick": 1,
+  "resources": {"gold": 200, "lumber": 60},
+  "supply": {"used": 10, "cap": 20},
+  "units": [
+    {
+      "id": "u1",
+      "owner": "self",
+      "type": "peasant",
+      "hp": 220,
+      "position": {"x": 1, "y": 2}
+    }
+  ]
+}

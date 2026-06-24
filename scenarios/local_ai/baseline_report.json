@@ -1,0 +1,35 @@
+{
+  "scenario_count": 2,
+  "baseline_compared": false,
+  "max_drift": 0.15,
+  "drift_summary": {
+    "pass_count": 0,
+    "fail_count": 0
+  },
+  "results": [
+    {
+      "scenario": "early_pressure.json",
+      "summary": {
+        "total_states": 1,
+        "executed_actions": 1,
+        "blocked_states": 0
+      },
+      "metrics": {
+        "executed_rate": 1.0
+      },
+      "drift": null
+    },
+    {
+      "scenario": "opening_balanced.json",
+      "summary": {
+        "total_states": 2,
+        "executed_actions": 2,
+        "blocked_states": 0
+      },
+      "metrics": {
+        "executed_rate": 1.0
+      },
+      "drift": null
+    }
+  ]
+}

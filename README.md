@@ -80,9 +80,28 @@ Compare against a previous baseline report and fail drift over threshold:
 python -m python.runtime.run_scenarios --scenario-dir scenarios/local_ai --baseline reports/scenario_report_baseline.json --max-drift 0.15 --out reports/scenario_report.json
 ```
 
+Create or refresh a baseline snapshot:
+
+```bash
+python -m python.runtime.create_scenario_baseline --scenario-dir scenarios/local_ai --out scenarios/local_ai/baseline_report.json
+```
+
+Run strict drift gate and return non-zero on failures:
+
+```bash
+python -m python.runtime.run_scenarios --scenario-dir scenarios/local_ai --baseline scenarios/local_ai/baseline_report.json --require-baseline-match --max-drift 0.0 --fail-on-drift --out reports/scenario_report_gated.json
+```
+
 ## Contract Validation
 - State samples are validated against contracts/game_state.schema.json at load time.
 - Action intents are validated against contracts/action_intent.schema.json before queueing.
+- C# runtime parity skeleton validates the same contracts:
+
+```bash
+dotnet build dotnet/runtime/ColdChair.Runtime.csproj -c Release
+dotnet run --project dotnet/runtime/ColdChair.Runtime.csproj -- validate-game-state --file examples/sample_game_state.json
+dotnet run --project dotnet/runtime/ColdChair.Runtime.csproj -- validate-action-intent --file examples/sample_action_intent.json
+```
 
 ## Git Workflow
 - Trunk-based with short-lived milestone branches.

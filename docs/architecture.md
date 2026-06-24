@@ -19,9 +19,11 @@
 - python/runtime/local_loop.py: Supervised local decision-to-action loop runner.
 - python/runtime/run_local_loop.py: CLI entry point for local loop report generation.
 - python/runtime/run_scenarios.py: Scenario-pack regression runner for local loop outcomes.
+- python/runtime/create_scenario_baseline.py: Baseline snapshot generator for scenario drift checks.
 - contracts: Shared schemas used by Python and C# components.
 - contracts/action_intent.schema.json: Intent schema for runtime command payloads.
 - python/contracts/validator.py: Shared JSON-schema validation for game state and action intents.
+- dotnet/runtime/*: C# parity skeleton with contract-aligned models and schema-aware validator.
 - dotnet/runtime: Runtime orchestration and action queue skeleton.
 - tests: Unit and integration tests.
 
@@ -40,3 +42,4 @@
 ## Drift Reporting
 - Scenario regression output includes per-scenario executed-rate metrics.
 - Optional baseline comparison reports pass/fail drift against configurable threshold.
+- Strict gating mode can require baseline coverage and return non-zero on drift failures.

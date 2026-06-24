@@ -34,6 +34,16 @@ def build_parser() -> argparse.ArgumentParser:
         default=0.15,
         help="Maximum allowed executed-rate drift versus baseline",
     )
+    parser.add_argument(
+        "--require-baseline-match",
+        action="store_true",
+        help="Fail scenarios that are not present in the baseline report",
+    )
+    parser.add_argument(
+        "--fail-on-drift",
+        action="store_true",
+        help="Return non-zero exit code when drift checks fail",
+    )
     return parser
 
 
@@ -45,7 +55,14 @@ def main() -> int:
         raise FileNotFoundError(f"Scenario directory not found: {scenario_dir}")
 
     files = sorted(
-        [p for p in scenario_dir.iterdir() if p.is_file() and p.suffix.lower() in {".json", ".jsonl"}]
+        [
+            p
+            for p in scenario_dir.iterdir()
+            if p.is_file()
+            and p.suffix.lower() in {".json", ".jsonl"}
+            and not p.name.endswith("baseline_report.json")
+            and "report" not in p.stem
+        ]
     )
 
     runner = LocalLoopRunner()
@@ -77,6 +94,15 @@ def main() -> int:
                 "current_executed_rate": executed_rate,
                 "drift": drift,
                 "pass": drift <= args.max_drift,
+                "reason": "within_threshold" if drift <= args.max_drift else "drift_exceeds_threshold",
+            }
+        elif args.baseline and args.require_baseline_match:
+            drift_payload = {
+                "baseline_executed_rate": None,
+                "current_executed_rate": executed_rate,
+                "drift": None,
+                "pass": False,
+                "reason": "missing_baseline_scenario",
             }
 
         scenario_results.append(
@@ -109,6 +135,8 @@ def main() -> int:
     out_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
     print(json.dumps(payload, indent=2))
+    if args.fail_on_drift and fail_count > 0:
+        return 2
     return 0
 
 
