@@ -30,3 +30,6 @@ jobs:
 
       - name: Smoke run local loop
         run: python -m python.runtime.run_local_loop --samples examples/sample_states.json --out reports/local_loop_report.json
+
+      - name: Smoke run scenario regression
+        run: python -m python.runtime.run_scenarios --scenario-dir scenarios/local_ai --out reports/scenario_report.json

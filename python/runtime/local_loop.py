@@ -5,6 +5,7 @@ from typing import Any
 
 from python.policy.decision_engine import DecisionEngine
 from python.runtime.action_queue import ActionQueue, RuntimeSafetyConfig
+from python.runtime.executor import IntentExecutor
 
 
 @dataclass
@@ -21,11 +22,13 @@ class LocalLoopRunner:
         self,
         engine: DecisionEngine | None = None,
         queue: ActionQueue | None = None,
+        executor: IntentExecutor | None = None,
     ) -> None:
         self.engine = engine or DecisionEngine()
         self.queue = queue or ActionQueue(
             RuntimeSafetyConfig(max_actions_per_second=1000000.0, online_mode_enabled=False)
         )
+        self.executor = executor or IntentExecutor(dry_run=True)
 
     def run_states(self, states: list[dict[str, Any]]) -> tuple[LocalLoopSummary, list[dict[str, Any]]]:
         logs: list[dict[str, Any]] = []
@@ -41,16 +44,20 @@ class LocalLoopRunner:
                 logs.append({"index": idx, "status": "blocked"})
                 continue
 
+            execution = self.executor.execute(action)
+
             logs.append(
                 {
                     "index": idx,
-                    "status": "executed",
+                    "status": execution.status,
                     "action": {
                         "type": action.type,
                         "priority": action.priority,
                         "target_id": action.target_id,
                         "position": action.position,
                     },
+                    "command": execution.command,
+                    "dry_run": execution.dry_run,
                 }
             )
 

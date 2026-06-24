@@ -65,6 +65,14 @@ python -m python.runtime.run_local_loop --samples examples/sample_states.json --
 ```
 
 Use --window-inactive to verify safety blocking behavior.
+Use --live-execution to disable dry-run telemetry mode.
+
+## Scenario Pack Regression
+Run all scenarios in the local scenario pack:
+
+```bash
+python -m python.runtime.run_scenarios --scenario-dir scenarios/local_ai --out reports/scenario_report.json
+```
 
 ## Git Workflow
 - Trunk-based with short-lived milestone branches.

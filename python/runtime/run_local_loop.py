@@ -7,6 +7,7 @@ from pathlib import Path
 
 from python.replay.sample_loader import load_state_samples
 from python.runtime.action_queue import ActionQueue, RuntimeSafetyConfig
+from python.runtime.executor import IntentExecutor
 from python.runtime.local_loop import LocalLoopRunner
 
 
@@ -36,6 +37,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Simulate inactive game window, causing queue blocks",
     )
+    parser.add_argument(
+        "--live-execution",
+        action="store_true",
+        help="Disable dry-run mode in executor telemetry",
+    )
     return parser
 
 
@@ -50,8 +56,9 @@ def main() -> int:
         )
     )
     queue.set_active_window_ok(not args.window_inactive)
+    executor = IntentExecutor(dry_run=not args.live_execution)
 
-    runner = LocalLoopRunner(queue=queue)
+    runner = LocalLoopRunner(queue=queue, executor=executor)
     summary, logs = runner.run_states(samples)
 
     payload = {

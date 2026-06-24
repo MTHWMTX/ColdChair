@@ -1,0 +1,17 @@
+[
+  {
+    "tick": 10,
+    "resources": {"gold": 300, "lumber": 80},
+    "supply": {"used": 14, "cap": 24},
+    "units": [
+      {"id": "u1", "owner": "self", "type": "footman", "hp": 420, "position": {"x": 30, "y": 28}},
+      {"id": "u2", "owner": "self", "type": "footman", "hp": 420, "position": {"x": 31, "y": 28}},
+      {"id": "u3", "owner": "self", "type": "footman", "hp": 420, "position": {"x": 32, "y": 29}},
+      {"id": "u4", "owner": "self", "type": "footman", "hp": 420, "position": {"x": 33, "y": 29}},
+      {"id": "u5", "owner": "self", "type": "footman", "hp": 420, "position": {"x": 34, "y": 30}},
+      {"id": "u6", "owner": "self", "type": "footman", "hp": 420, "position": {"x": 35, "y": 30}},
+      {"id": "u7", "owner": "self", "type": "footman", "hp": 420, "position": {"x": 36, "y": 30}},
+      {"id": "u8", "owner": "self", "type": "footman", "hp": 420, "position": {"x": 37, "y": 31}}
+    ]
+  }
+]

@@ -30,6 +30,8 @@ def test_local_loop_executes_actions() -> None:
     assert summary.executed_actions == 2
     assert summary.blocked_states == 0
     assert logs[0]["status"] == "executed"
+    assert logs[0]["command"]["op"] == "key_press"
+    assert logs[0]["dry_run"] is True
 
 
 def test_local_loop_blocks_when_window_inactive() -> None:
@@ -83,3 +85,4 @@ def test_local_loop_cli_writes_report(tmp_path: Path, monkeypatch) -> None:
     payload = json.loads(out_path.read_text(encoding="utf-8"))
     assert payload["summary"]["total_states"] == 1
     assert payload["summary"]["executed_actions"] == 1
+    assert payload["logs"][0]["dry_run"] is True
