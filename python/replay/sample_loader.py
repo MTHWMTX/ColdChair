@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from python.contracts.validator import validate_game_state
+
 
 def load_state_samples(path: str | Path) -> list[dict[str, Any]]:
     """Load normalized game-state samples from JSON or JSONL files."""
@@ -38,9 +40,11 @@ def _validate_samples(samples: list[Any]) -> list[dict[str, Any]]:
     for idx, sample in enumerate(samples):
         if not isinstance(sample, dict):
             raise ValueError(f"Sample at index {idx} is not an object")
+        normalized = dict(sample)
+        normalized.setdefault("tick", idx)
         if "resources" not in sample or "supply" not in sample or "units" not in sample:
             raise ValueError(
                 f"Sample at index {idx} is missing one of required keys: resources, supply, units"
             )
-        validated.append(sample)
+        validated.append(validate_game_state(normalized))
     return validated

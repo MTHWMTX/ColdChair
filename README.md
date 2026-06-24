@@ -74,6 +74,16 @@ Run all scenarios in the local scenario pack:
 python -m python.runtime.run_scenarios --scenario-dir scenarios/local_ai --out reports/scenario_report.json
 ```
 
+Compare against a previous baseline report and fail drift over threshold:
+
+```bash
+python -m python.runtime.run_scenarios --scenario-dir scenarios/local_ai --baseline reports/scenario_report_baseline.json --max-drift 0.15 --out reports/scenario_report.json
+```
+
+## Contract Validation
+- State samples are validated against contracts/game_state.schema.json at load time.
+- Action intents are validated against contracts/action_intent.schema.json before queueing.
+
 ## Git Workflow
 - Trunk-based with short-lived milestone branches.
 - Push once per completed phase milestone.

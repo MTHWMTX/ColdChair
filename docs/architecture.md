@@ -21,6 +21,7 @@
 - python/runtime/run_scenarios.py: Scenario-pack regression runner for local loop outcomes.
 - contracts: Shared schemas used by Python and C# components.
 - contracts/action_intent.schema.json: Intent schema for runtime command payloads.
+- python/contracts/validator.py: Shared JSON-schema validation for game state and action intents.
 - dotnet/runtime: Runtime orchestration and action queue skeleton.
 - tests: Unit and integration tests.
 
@@ -35,3 +36,7 @@
 ## Operational Mode
 - Default mode is offline.
 - Any future online mode must be user-triggered and supervised.
+
+## Drift Reporting
+- Scenario regression output includes per-scenario executed-rate metrics.
+- Optional baseline comparison reports pass/fail drift against configurable threshold.

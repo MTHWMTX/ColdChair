@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from time import monotonic
 
+from python.contracts.validator import validate_action_intent
 from python.policy.decision_engine import ActionIntent
 
 
@@ -33,6 +34,8 @@ class ActionQueue:
 
     def enqueue(self, intents: list[ActionIntent]) -> None:
         sorted_intents = sorted(intents, key=lambda i: i.priority, reverse=True)
+        for intent in sorted_intents:
+            validate_action_intent(intent)
         self._queue.extend(sorted_intents)
 
     def dequeue_next(self) -> ActionIntent | None:
