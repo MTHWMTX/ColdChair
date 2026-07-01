@@ -20,6 +20,7 @@ from datetime import datetime, timedelta, timezone
 import urllib.error
 import urllib.parse
 import urllib.request
+import ssl
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Iterable
@@ -27,6 +28,54 @@ from urllib.robotparser import RobotFileParser
 
 DEFAULT_BASE_URL = "https://warcraft3.info/"
 DEFAULT_USER_AGENT = "ColdChairReplayBot/0.1 (+local training prep; respectful crawler)"
+
+
+def _slugify(value: object, fallback: str = "unknown") -> str:
+    text = re.sub(r"[^a-z0-9]+", "_", str(value).lower()).strip("_")
+    return text or fallback
+
+
+def _normalize_race_name(value: object) -> str:
+    text = str(value or "unknown").strip().lower()
+    if not text:
+        return "unknown"
+    aliases = {
+        "human": "human",
+        "hum": "human",
+        "orc": "orc",
+        "nightelf": "nightelf",
+        "night elf": "nightelf",
+        "elf": "nightelf",
+        "undead": "undead",
+        "ud": "undead",
+        "random": "random",
+        "r": "random",
+    }
+    return aliases.get(text, _slugify(text))
+
+
+def _sorted_matchup_label(players: object) -> str:
+    races: list[str] = []
+    if isinstance(players, list):
+        ordered_players = sorted(
+            [player for player in players if isinstance(player, dict)],
+            key=lambda player: int(player.get("team", 0) or 0),
+        )
+        for player in ordered_players[:2]:
+            race = player.get("race")
+            if not race and isinstance(player.get("stats_player"), dict):
+                race = player["stats_player"].get("main_race")
+            races.append(_normalize_race_name(race))
+
+    if len(races) < 2:
+        return "unknown_vs_unknown"
+
+    first, second = sorted(races[:2])
+    return f"{first}_vs_{second}"
+
+
+def _replay_sidecar_path(target: Path) -> Path:
+    return Path(str(target) + ".meta.json")
 
 
 class LinkParser(HTMLParser):
@@ -44,10 +93,47 @@ class LinkParser(HTMLParser):
                 self.links.append(value)
 
 
-def _build_opener(user_agent: str) -> urllib.request.OpenerDirector:
-    opener = urllib.request.build_opener()
+def _build_opener(
+    user_agent: str,
+    *,
+    insecure_skip_ssl_verification: bool = False,
+) -> urllib.request.OpenerDirector:
+    if insecure_skip_ssl_verification:
+        context = ssl._create_unverified_context()
+        opener = urllib.request.build_opener(urllib.request.HTTPSHandler(context=context))
+    else:
+        opener = urllib.request.build_opener()
     opener.addheaders = [("User-Agent", user_agent)]
     return opener
+
+
+def _build_api_target_path(out_dir: Path, replay: dict[str, object], major_version: int) -> Path:
+    replay_id = replay.get("id")
+    extension = str(replay.get("filetype") or "w3g").lower()
+    patch_label = _format_patch_label(str(replay.get("version", "")), major_version)
+    patch_token = patch_label.replace(".", "_")
+    map_slug = _slugify(replay.get("map"), fallback="unknown_map")
+    matchup_slug = _sorted_matchup_label(replay.get("players", []))
+    filename = f"replay_{replay_id}_v{patch_token}.{extension}"
+    return out_dir / matchup_slug / map_slug / filename
+
+
+def _write_replay_sidecar(target: Path, replay: dict[str, object], *, patch_label: str, source_url: str) -> None:
+    sidecar = _replay_sidecar_path(target)
+    payload = {
+        "replay_id": replay.get("id"),
+        "map": replay.get("map"),
+        "map_alias": replay.get("map_alias"),
+        "matchup": _sorted_matchup_label(replay.get("players", [])),
+        "version": replay.get("version"),
+        "patch_label": patch_label,
+        "created_at": replay.get("created_at"),
+        "filetype": replay.get("filetype"),
+        "source_url": source_url,
+        "players": replay.get("players", []),
+    }
+    sidecar.parent.mkdir(parents=True, exist_ok=True)
+    sidecar.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
 
 def _fetch_text(
@@ -92,6 +178,7 @@ class PoliteCrawler:
         timeout_s: float,
         retries: int,
         backoff_s: float,
+        insecure_skip_ssl_verification: bool = False,
     ) -> None:
         self.base_url = base_url
         self.user_agent = user_agent
@@ -100,11 +187,26 @@ class PoliteCrawler:
         self.timeout_s = timeout_s
         self.retries = retries
         self.backoff_s = backoff_s
+        self.insecure_skip_ssl_verification = insecure_skip_ssl_verification
         self._last_request_ts = 0.0
-        self.opener = _build_opener(user_agent)
+        self.opener = _build_opener(
+            user_agent,
+            insecure_skip_ssl_verification=insecure_skip_ssl_verification,
+        )
         self.robots = RobotFileParser()
         self.robots.set_url(urllib.parse.urljoin(base_url, "robots.txt"))
-        self.robots.read()
+        try:
+            robots_txt = _fetch_text(
+                opener=self.opener,
+                url=urllib.parse.urljoin(base_url, "robots.txt"),
+                timeout_s=self.timeout_s,
+                retries=self.retries,
+                backoff_s=self.backoff_s,
+            )
+            self.robots.parse(robots_txt.splitlines())
+        except Exception:
+            # If robots.txt cannot be fetched, fall back to allowing checks to proceed.
+            self.robots.parse(["User-agent: *", "Allow: /"])
 
     def _sleep_if_needed(self) -> None:
         elapsed = time.monotonic() - self._last_request_ts
@@ -422,6 +524,12 @@ def main() -> int:
     parser.add_argument("--min-elo", type=int, default=2200, help="Minimum replay Elo for API mode")
     parser.add_argument("--filetype", choices=["w3g", "nwg"], default="w3g")
     parser.add_argument(
+        "--organize-by",
+        choices=["flat", "matchup", "map", "matchup_map"],
+        default="matchup_map",
+        help="Folder layout for API downloads",
+    )
+    parser.add_argument(
         "--major-version",
         type=int,
         default=2,
@@ -443,6 +551,11 @@ def main() -> int:
     parser.add_argument("--retries", type=int, default=2)
     parser.add_argument("--backoff", type=float, default=2.0)
     parser.add_argument("--user-agent", default=DEFAULT_USER_AGENT)
+    parser.add_argument(
+        "--skip-ssl-verification",
+        action="store_true",
+        help="Disable certificate verification if the site presents an invalid TLS chain",
+    )
     parser.add_argument("--dry-run", action="store_true", help="Report links without downloading files")
     args = parser.parse_args()
 
@@ -457,6 +570,7 @@ def main() -> int:
         timeout_s=args.timeout,
         retries=args.retries,
         backoff_s=args.backoff,
+        insecure_skip_ssl_verification=args.skip_ssl_verification,
     )
 
     print(f"[info] robots: {urllib.parse.urljoin(args.base_url, 'robots.txt')}")
@@ -566,10 +680,14 @@ def main() -> int:
             replay_id = replay.get("id")
             if replay_id is None:
                 continue
-            extension = str(replay.get("filetype") or args.filetype).lower()
             patch_label = _format_patch_label(str(replay.get("version", "")), effective_major_version)
-            patch_token = patch_label.replace(".", "_")
-            target = out_dir / f"replay_{replay_id}_v{patch_token}.{extension}"
+            target = _build_api_target_path(out_dir, replay, effective_major_version)
+            if args.organize_by == "flat":
+                target = out_dir / target.name
+            elif args.organize_by == "matchup":
+                target = out_dir / target.parent.parent.name / target.name
+            elif args.organize_by == "map":
+                target = out_dir / target.parent.name / target.name
             source_url = urllib.parse.urljoin(args.base_url, f"/api/v1/replays/{replay_id}/download")
             if args.dry_run:
                 player_names: list[str] = []
@@ -593,6 +711,7 @@ def main() -> int:
                 continue
             try:
                 crawler.download_file(source_url, target)
+                _write_replay_sidecar(target, replay, patch_label=patch_label, source_url=source_url)
                 downloaded += 1
                 print(f"[ok] downloaded: {target}")
             except PermissionError as exc:

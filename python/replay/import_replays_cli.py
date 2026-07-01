@@ -4,12 +4,53 @@ from __future__ import annotations
 
 import argparse
 import json
+import hashlib
 import subprocess
 import sys
 from pathlib import Path
 from typing import Optional
 
 from python.replay.w3g_parser import W3GParser
+
+
+def _file_fingerprint(path: Path) -> str:
+    hasher = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            hasher.update(chunk)
+    return hasher.hexdigest()
+
+
+def _unique_replay_files(replay_dir: Path) -> tuple[list[Path], int]:
+    seen_hashes: set[str] = set()
+    unique_files: list[Path] = []
+    duplicate_count = 0
+
+    replay_files = list(replay_dir.glob("**/*.w3g")) + list(replay_dir.glob("**/*.json"))
+    for replay_file in sorted(f for f in replay_files if f.is_file()):
+        if replay_file.name.endswith(".meta.json"):
+            continue
+        fingerprint = _file_fingerprint(replay_file)
+        if fingerprint in seen_hashes:
+            duplicate_count += 1
+            continue
+        seen_hashes.add(fingerprint)
+        unique_files.append(replay_file)
+
+    return unique_files, duplicate_count
+
+
+def _load_sidecar_metadata(replay_path: Path) -> dict:
+    sidecar = Path(str(replay_path) + ".meta.json")
+    if not sidecar.is_file():
+        return {}
+
+    try:
+        payload = json.loads(sidecar.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+    return payload if isinstance(payload, dict) else {}
 
 
 def parse_replay_with_metadata(replay_path: Path, verbose: bool = False) -> tuple[list[dict], dict]:
@@ -19,10 +60,12 @@ def parse_replay_with_metadata(replay_path: Path, verbose: bool = False) -> tupl
     try:
         parsed = parser.parse(replay_path)
         samples = parser.to_game_state_samples(parsed)
+        sidecar = _load_sidecar_metadata(replay_path)
         metadata = {
-            "map_name": str(parsed.map_name or "unknown"),
+            "map_name": str(sidecar.get("map") or parsed.map_name or "unknown"),
             "player_count": int(parsed.player_count or 0),
             "source_path": str(parsed.source_path),
+            "matchup": str(sidecar.get("matchup") or "unknown_vs_unknown"),
         }
         return samples, metadata
     except Exception as e:
@@ -49,11 +92,7 @@ def import_replays_from_directory(
     if not replay_dir.is_dir():
         raise ValueError(f"Not a directory: {replay_dir}")
 
-    # Find all .w3g and .json replay files
-    replay_files = list(replay_dir.glob("**/*.w3g")) + list(
-        replay_dir.glob("**/*.json")
-    )
-    replay_files = [f for f in replay_files if f.is_file()]
+    replay_files, duplicate_count = _unique_replay_files(replay_dir)
 
     if not replay_files:
         if verbose:
@@ -62,6 +101,8 @@ def import_replays_from_directory(
 
     if verbose:
         print(f"Found {len(replay_files)} replay file(s)")
+        if duplicate_count:
+            print(f"Skipped {duplicate_count} duplicate replay file(s)")
 
     all_samples = []
     successful = 0

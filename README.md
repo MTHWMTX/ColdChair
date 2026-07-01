@@ -25,6 +25,7 @@ Safety-first Warcraft III: The Frozen Throne bot foundation.
 1. Create a Python virtual environment.
 2. Install dependencies from requirements.txt.
 3. Run tests with pytest.
+4. See [COMMANDS.md](COMMANDS.md) for a concise command reference.
 
 ## Offline Evaluation
 1. Prepare state samples in JSON or JSONL format.

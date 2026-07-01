@@ -27,6 +27,19 @@ def _write_sample(path: Path, tick: int) -> None:
     path.write_text(json.dumps(payload), encoding="utf-8")
 
 
+def _copy_sample(src: Path, dest: Path) -> None:
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+
+
+def _write_sidecar(path: Path, *, map_name: str, matchup: str) -> None:
+    payload = {
+        "map": map_name,
+        "matchup": matchup,
+    }
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+
 def test_build_balanced_dataset_caps_per_group(tmp_path: Path) -> None:
     replays = tmp_path / "incoming"
     _write_sample(replays / "h_vs_o" / "a.json", 1)
@@ -111,3 +124,38 @@ def test_build_balanced_dataset_groups_by_map(tmp_path: Path) -> None:
     assert summary["total_groups"] == 2
     assert "echo_isles" in summary["groups"]
     assert "terenas_stand" in summary["groups"]
+
+
+def test_build_balanced_dataset_skips_duplicate_files(tmp_path: Path) -> None:
+    replays = tmp_path / "incoming"
+    source = replays / "h_vs_o" / "match.json"
+    _write_sample(source, 5)
+    _copy_sample(source, replays / "n_vs_u" / "match_copy.json")
+
+    out = tmp_path / "balanced_dupes.json"
+    summary = build_balanced_dataset(replays, out, max_states_per_group=0, verbose=False)
+
+    assert summary["duplicate_files"] == 1
+    assert summary["total_states"] == 1
+
+    samples = json.loads(out.read_text(encoding="utf-8"))
+    assert len(samples) == 1
+
+
+def test_build_balanced_dataset_uses_sidecar_metadata(tmp_path: Path) -> None:
+    replays = tmp_path / "incoming"
+    replay = replays / "h_vs_o" / "replay_1.json"
+    _write_sample(replay, 7)
+    _write_sidecar(Path(str(replay) + ".meta.json"), map_name="Lost Temple", matchup="human_vs_orc")
+
+    out = tmp_path / "balanced_sidecar.json"
+    summary = build_balanced_dataset(
+        replays,
+        out,
+        group_mode="subfolder_map",
+        max_states_per_group=0,
+        verbose=False,
+    )
+
+    assert summary["total_groups"] == 1
+    assert "h_vs_o__lost_temple" in summary["groups"]

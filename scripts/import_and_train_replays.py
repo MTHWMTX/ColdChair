@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -21,11 +22,108 @@ from python.training.policy_manager import PolicyManager
 from python.training.run_training import run_training
 
 
+def _download_wc3info_replays(args: argparse.Namespace, replay_dir: Path) -> None:
+    downloader = ROOT / "scripts" / "download_wc3info_replays.py"
+    download_args = [
+        sys.executable,
+        str(downloader),
+        "--out-dir",
+        str(replay_dir),
+        "--discovery-mode",
+        args.wc3info_discovery_mode,
+        "--min-elo",
+        str(args.wc3info_min_elo),
+        "--target-version",
+        args.wc3info_target_version,
+        "--major-version",
+        str(args.wc3info_major_version),
+        "--filetype",
+        args.wc3info_filetype,
+        "--max-age-days",
+        str(args.wc3info_max_age_days),
+        "--max-replays",
+        str(args.wc3info_max_replays),
+        "--max-pages",
+        str(args.wc3info_max_pages),
+    ]
+
+    if args.wc3info_skip_ssl_verification:
+        download_args.append("--skip-ssl-verification")
+
+    if args.wc3info_dry_run:
+        download_args.append("--dry-run")
+
+    print(f"\n[replays] Fetching relevant replays from Warcraft3.Info into {replay_dir}")
+    subprocess.run(download_args, check=True)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Import replay folder, register dataset, and run training"
     )
     parser.add_argument("--replays-dir", default="replays/incoming", help="Replay drop folder")
+    parser.add_argument(
+        "--download-from-wc3info",
+        action="store_true",
+        help="Download relevant replays from Warcraft3.Info before importing",
+    )
+    parser.add_argument(
+        "--wc3info-dry-run",
+        action="store_true",
+        help="Print Warcraft3.Info download candidates without saving files",
+    )
+    parser.add_argument(
+        "--wc3info-skip-ssl-verification",
+        action="store_true",
+        help="Disable TLS verification when fetching Warcraft3.Info replays",
+    )
+    parser.add_argument(
+        "--wc3info-discovery-mode",
+        choices=["api", "articles"],
+        default="api",
+        help="Downloader mode used when fetching replays from Warcraft3.Info",
+    )
+    parser.add_argument(
+        "--wc3info-min-elo",
+        type=int,
+        default=2400,
+        help="Minimum Elo used when downloading from Warcraft3.Info",
+    )
+    parser.add_argument(
+        "--wc3info-target-version",
+        default="auto",
+        help="Replay version filter passed to the Warcraft3.Info downloader",
+    )
+    parser.add_argument(
+        "--wc3info-major-version",
+        type=int,
+        default=2,
+        help="Warcraft major version used to label downloads",
+    )
+    parser.add_argument(
+        "--wc3info-filetype",
+        choices=["w3g", "nwg"],
+        default="w3g",
+        help="Replay file type to download from Warcraft3.Info",
+    )
+    parser.add_argument(
+        "--wc3info-max-age-days",
+        type=int,
+        default=30,
+        help="Maximum age for downloaded replays",
+    )
+    parser.add_argument(
+        "--wc3info-max-replays",
+        type=int,
+        default=100,
+        help="Maximum number of replays to download from Warcraft3.Info",
+    )
+    parser.add_argument(
+        "--wc3info-max-pages",
+        type=int,
+        default=20,
+        help="Maximum pages to inspect when discovering Warcraft3.Info replays",
+    )
     parser.add_argument("--datasets-dir", default="datasets", help="Datasets directory")
     parser.add_argument("--policies-dir", default="policies", help="Policies directory")
     parser.add_argument("--reports-dir", default="reports", help="Reports directory")
@@ -142,6 +240,9 @@ def main() -> int:
 
     replay_dir = Path(replays_dir)
     output_file = datasets_dir / "replays_extracted.json"
+
+    if args.download_from_wc3info:
+        _download_wc3info_replays(args, replay_dir)
 
     print(f"\n[replays] Importing from {replay_dir}")
     if not replay_dir.exists():

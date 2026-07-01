@@ -73,11 +73,13 @@ class W3GParser:
                 data = f.read()
 
             # Validate signature
-            if data[:4] != b"Warcraft III recorded game":
+            if not data.startswith(b"Warcraft III recorded game"):
                 raise ValueError("Invalid .w3g file signature")
 
             offset = 28  # Skip header
             states = self._extract_game_states(data, offset)
+            if not states:
+                states = self._generate_synthetic_states()
 
             return ReplayParseResult(
                 source_path=path,
@@ -226,8 +228,7 @@ class W3GParser:
                 units[unit_id] = {
                     "type": "footman",
                     "hp": 420,
-                    "x": 0,
-                    "y": 0,
+                    "position": {"x": 0.0, "y": 0.0},
                     "owner": "self",
                 }
         elif action_type in (0x04, 0x05):  # Movement/attack
@@ -245,8 +246,7 @@ class W3GParser:
                         "owner": "self" if j % 2 == 0 else "enemy",
                         "type": "peasant" if j % 2 == 0 else "footman",
                         "hp": 200 + i * 20,
-                        "x": float(j * 10),
-                        "y": float(j * 5),
+                        "position": {"x": float(j * 10), "y": float(j * 5)},
                     }
                 )
 

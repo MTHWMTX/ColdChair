@@ -2,10 +2,19 @@ from __future__ import annotations
 
 import argparse
 import json
+import hashlib
 from pathlib import Path
 from typing import Any
 
 from python.replay.import_replays_cli import parse_replay_with_metadata
+
+
+def _file_fingerprint(path: Path) -> str:
+    hasher = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            hasher.update(chunk)
+    return hasher.hexdigest()
 
 
 def _group_name_for_file(replays_dir: Path, replay_file: Path) -> str:
@@ -48,13 +57,22 @@ def build_balanced_dataset(
         raise ValueError(f"Not a directory: {root}")
 
     replay_files = sorted(list(root.glob("**/*.w3g")) + list(root.glob("**/*.json")))
-    replay_files = [p for p in replay_files if p.is_file()]
+    replay_files = [p for p in replay_files if p.is_file() and not p.name.endswith(".meta.json")]
+    replay_files_by_hash: dict[str, Path] = {}
+    duplicate_files = 0
+
+    for replay_file in replay_files:
+        fingerprint = _file_fingerprint(replay_file)
+        if fingerprint in replay_files_by_hash:
+            duplicate_files += 1
+            continue
+        replay_files_by_hash[fingerprint] = replay_file
 
     grouped_states: dict[str, list[dict[str, Any]]] = {}
     file_counts: dict[str, int] = {}
     map_counts: dict[str, int] = {}
 
-    for replay_file in replay_files:
+    for replay_file in sorted(replay_files_by_hash.values()):
         subfolder_group = _group_name_for_file(root, replay_file)
         samples, metadata = parse_replay_with_metadata(replay_file, verbose=verbose)
         if not samples:
@@ -81,6 +99,7 @@ def build_balanced_dataset(
             "total_states": 0,
             "total_groups": 0,
             "groups": {},
+            "duplicate_files": duplicate_files,
             "out_file": str(out_file),
         }
 
@@ -110,6 +129,7 @@ def build_balanced_dataset(
         "groups": group_summary,
         "group_mode": group_mode,
         "max_states_per_group": max_states_per_group,
+        "duplicate_files": duplicate_files,
         "out_file": str(out_path),
     }
 
